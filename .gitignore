@@ -1,12 +1,12 @@
 # .gitignore for Grails 1.2 and 1.3
 
 # web application files
-/web-app/WEB-INF
+WEB-INF/
 
 # IDE support files
 /.classpath
 /.launch
-/.project
+*.project
 /.settings
 /*.launch
 /*.tmproj
@@ -41,7 +41,7 @@
 /web-app/WEB-INF/classes
 
 # "temporary" build files
-/target
+target/
 
 # other
 *.iws
