@@ -1,6 +1,6 @@
 package grotrack
 
-class Coach {
+class Coach extends User {
 
     static constraints = {
     }

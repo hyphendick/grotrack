@@ -1,7 +1,7 @@
 package grotrack
 
-class Trainer {
-	static hasMany = [athletes: Athlete]
+class Trainer extends User {
+	static hasMany = [athletes: Athlete,teams:Team]
     static constraints = {
     }
 }

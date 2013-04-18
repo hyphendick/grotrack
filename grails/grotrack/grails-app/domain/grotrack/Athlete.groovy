@@ -1,6 +1,6 @@
 package grotrack
 
-class Athlete {
+class Athlete extends User {
 	
 	BigDecimal height;
 	BigDecimal weight;
