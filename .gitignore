@@ -11,6 +11,7 @@ WEB-INF/
 
 
 /ivy*
+target-eclipse/
 /eclipse
 *.project
 *.classpath
