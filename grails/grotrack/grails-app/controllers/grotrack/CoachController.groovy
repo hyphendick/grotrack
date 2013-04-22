@@ -1,5 +1,6 @@
 package grotrack
 
+import grails.converters.JSON;
 import org.springframework.dao.DataIntegrityViolationException
 
 class CoachController {
@@ -12,7 +13,8 @@ class CoachController {
 
     def list(Integer max) {
         params.max = Math.min(max ?: 10, 100)
-        [coachInstanceList: Coach.list(params), coachInstanceTotal: Coach.count()]
+        //[coachInstanceList: Coach.list(params), coachInstanceTotal: Coach.count()]
+        render Coach.list(params) as JSON
     }
 
     def create() {
