@@ -1,6 +1,8 @@
 package grotrack
 
 import org.springframework.dao.DataIntegrityViolationException
+import grails.converters.JSON
+
 
 class WorkoutController {
 
@@ -10,11 +12,15 @@ class WorkoutController {
         redirect(action: "list", params: params)
     }
 
-    def list(Integer max) {
+    /*def list(Integer max) {
         params.max = Math.min(max ?: 10, 100)
         [workoutInstanceList: Workout.list(params), workoutInstanceTotal: Workout.count()]
-    }
+    }*/
 
+    def list(Integer max) {
+        params.max = Math.min(max ?: 10, 100)
+        render Workout.list(params) as JSON
+    }
     def create() {
         [workoutInstance: new Workout(params)]
     }
@@ -30,7 +36,7 @@ class WorkoutController {
         redirect(action: "show", id: workoutInstance.id)
     }
 
-    def show(Long id) {
+    /*def show(Long id) {
         def workoutInstance = Workout.get(id)
         if (!workoutInstance) {
             flash.message = message(code: 'default.not.found.message', args: [message(code: 'workout.label', default: 'Workout'), id])
@@ -39,6 +45,15 @@ class WorkoutController {
         }
 
         [workoutInstance: workoutInstance]
+    }*/
+
+    def show(Long id) {
+        def workoutInstance = Workout.get(id)
+        if(workoutInstance) {
+            render workoutInstance as JSON
+        } else {
+            render 'workout not found'
+        }
     }
 
     def edit(Long id) {
