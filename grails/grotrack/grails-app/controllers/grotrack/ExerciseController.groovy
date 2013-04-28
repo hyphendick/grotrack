@@ -1,6 +1,7 @@
 package grotrack
 
 import org.springframework.dao.DataIntegrityViolationException
+import grails.converters.JSON
 
 class ExerciseController {
 
@@ -12,60 +13,49 @@ class ExerciseController {
 
     def list(Integer max) {
         params.max = Math.min(max ?: 10, 100)
-        [exerciseInstanceList: Exercise.list(params), exerciseInstanceTotal: Exercise.count()]
+        //[exerciseInstanceList: Exercise.list(params), exerciseInstanceTotal: Exercise.count()]
+        //exerciseInstanceList = Exercise.list(params)
+        render Exercise.list(params) as JSON
     }
 
-    def create() {
-        [exerciseInstance: new Exercise(params)]
-    }
+//    def create() {
+//        [exerciseInstance: new Exercise(params)]
+ //   }
 
     def save() {
         def exerciseInstance = new Exercise(params)
         if (!exerciseInstance.save(flush: true)) {
-            render(view: "create", model: [exerciseInstance: exerciseInstance])
+            render exerciseInstance.errors.allErrors.collect {
+    message(error: it,encodeAs:'HTML')
+} as JSON
             return
         }
 
-        flash.message = message(code: 'default.created.message', args: [message(code: 'exercise.label', default: 'Exercise'), exerciseInstance.id])
-        redirect(action: "show", id: exerciseInstance.id)
+        render exerciseInstance as JSON
     }
 
     def show(Long id) {
         def exerciseInstance = Exercise.get(id)
         if (!exerciseInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'exercise.label', default: 'Exercise'), id])
-            redirect(action: "list")
-            return
+           response.status = 404
+           render "Exercise not found"
+           return
         }
 
-        [exerciseInstance: exerciseInstance]
-    }
-
-    def edit(Long id) {
-        def exerciseInstance = Exercise.get(id)
-        if (!exerciseInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'exercise.label', default: 'Exercise'), id])
-            redirect(action: "list")
-            return
-        }
-
-        [exerciseInstance: exerciseInstance]
+        render exerciseInstance as JSON
     }
 
     def update(Long id, Long version) {
         def exerciseInstance = Exercise.get(id)
         if (!exerciseInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'exercise.label', default: 'Exercise'), id])
-            redirect(action: "list")
-            return
+           response.status = 404
+           render "Exercise not found"
+           return
         }
 
         if (version != null) {
             if (exerciseInstance.version > version) {
-                exerciseInstance.errors.rejectValue("version", "default.optimistic.locking.failure",
-                          [message(code: 'exercise.label', default: 'Exercise')] as Object[],
-                          "Another user has updated this Exercise while you were editing")
-                render(view: "edit", model: [exerciseInstance: exerciseInstance])
+                render message(error: "Another user has updated this Exercise while you were editing", encodeAs: 'HTML') as JSON
                 return
             }
         }
@@ -73,30 +63,31 @@ class ExerciseController {
         exerciseInstance.properties = params
 
         if (!exerciseInstance.save(flush: true)) {
-            render(view: "edit", model: [exerciseInstance: exerciseInstance])
+           render exerciseInstance.errors.allErrors.collect {
+    message(error: it,encodeAs:'HTML')
+} as JSON
             return
         }
 
-        flash.message = message(code: 'default.updated.message', args: [message(code: 'exercise.label', default: 'Exercise'), exerciseInstance.id])
-        redirect(action: "show", id: exerciseInstance.id)
+        render exerciseInstance as JSON
     }
 
     def delete(Long id) {
         def exerciseInstance = Exercise.get(id)
         if (!exerciseInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'exercise.label', default: 'Exercise'), id])
-            redirect(action: "list")
+           response.status = 404
+           render "Exercise not found"
             return
         }
 
         try {
             exerciseInstance.delete(flush: true)
-            flash.message = message(code: 'default.deleted.message', args: [message(code: 'exercise.label', default: 'Exercise'), id])
-            redirect(action: "list")
+            response.status = 200
+            render ''
         }
         catch (DataIntegrityViolationException e) {
-            flash.message = message(code: 'default.not.deleted.message', args: [message(code: 'exercise.label', default: 'Exercise'), id])
-            redirect(action: "show", id: id)
+            response.status = 500
+            render 'Error deleting'
         }
     }
 }

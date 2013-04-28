@@ -1,6 +1,7 @@
 package grotrack
 
 import org.springframework.dao.DataIntegrityViolationException
+import grails.converters.JSON
 
 class TeamController {
 
@@ -12,60 +13,49 @@ class TeamController {
 
     def list(Integer max) {
         params.max = Math.min(max ?: 10, 100)
-        [teamInstanceList: Team.list(params), teamInstanceTotal: Team.count()]
+        //[teamInstanceList: Team.list(params), teamInstanceTotal: Team.count()]
+        //teamInstanceList = Team.list(params)
+        render Team.list(params) as JSON
     }
 
-    def create() {
-        [teamInstance: new Team(params)]
-    }
+//    def create() {
+//        [teamInstance: new Team(params)]
+ //   }
 
     def save() {
         def teamInstance = new Team(params)
         if (!teamInstance.save(flush: true)) {
-            render(view: "create", model: [teamInstance: teamInstance])
+            render teamInstance.errors.allErrors.collect {
+    message(error: it,encodeAs:'HTML')
+} as JSON
             return
         }
 
-        flash.message = message(code: 'default.created.message', args: [message(code: 'team.label', default: 'Team'), teamInstance.id])
-        redirect(action: "show", id: teamInstance.id)
+        render teamInstance as JSON
     }
 
     def show(Long id) {
         def teamInstance = Team.get(id)
         if (!teamInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'team.label', default: 'Team'), id])
-            redirect(action: "list")
-            return
+           response.status = 404
+           render "Team not found"
+           return
         }
 
-        [teamInstance: teamInstance]
-    }
-
-    def edit(Long id) {
-        def teamInstance = Team.get(id)
-        if (!teamInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'team.label', default: 'Team'), id])
-            redirect(action: "list")
-            return
-        }
-
-        [teamInstance: teamInstance]
+        render teamInstance as JSON
     }
 
     def update(Long id, Long version) {
         def teamInstance = Team.get(id)
         if (!teamInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'team.label', default: 'Team'), id])
-            redirect(action: "list")
-            return
+           response.status = 404
+           render "Team not found"
+           return
         }
 
         if (version != null) {
             if (teamInstance.version > version) {
-                teamInstance.errors.rejectValue("version", "default.optimistic.locking.failure",
-                          [message(code: 'team.label', default: 'Team')] as Object[],
-                          "Another user has updated this Team while you were editing")
-                render(view: "edit", model: [teamInstance: teamInstance])
+                render message(error: "Another user has updated this Team while you were editing", encodeAs: 'HTML') as JSON
                 return
             }
         }
@@ -73,30 +63,31 @@ class TeamController {
         teamInstance.properties = params
 
         if (!teamInstance.save(flush: true)) {
-            render(view: "edit", model: [teamInstance: teamInstance])
+           render teamInstance.errors.allErrors.collect {
+    message(error: it,encodeAs:'HTML')
+} as JSON
             return
         }
 
-        flash.message = message(code: 'default.updated.message', args: [message(code: 'team.label', default: 'Team'), teamInstance.id])
-        redirect(action: "show", id: teamInstance.id)
+        render teamInstance as JSON
     }
 
     def delete(Long id) {
         def teamInstance = Team.get(id)
         if (!teamInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'team.label', default: 'Team'), id])
-            redirect(action: "list")
+           response.status = 404
+           render "Team not found"
             return
         }
 
         try {
             teamInstance.delete(flush: true)
-            flash.message = message(code: 'default.deleted.message', args: [message(code: 'team.label', default: 'Team'), id])
-            redirect(action: "list")
+            response.status = 200
+            render ''
         }
         catch (DataIntegrityViolationException e) {
-            flash.message = message(code: 'default.not.deleted.message', args: [message(code: 'team.label', default: 'Team'), id])
-            redirect(action: "show", id: id)
+            response.status = 500
+            render 'Error deleting'
         }
     }
 }

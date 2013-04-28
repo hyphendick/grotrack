@@ -1,6 +1,7 @@
 package grotrack
 
 import org.springframework.dao.DataIntegrityViolationException
+import grails.converters.JSON
 
 class TrainerController {
 
@@ -12,60 +13,49 @@ class TrainerController {
 
     def list(Integer max) {
         params.max = Math.min(max ?: 10, 100)
-        [trainerInstanceList: Trainer.list(params), trainerInstanceTotal: Trainer.count()]
+        //[trainerInstanceList: Trainer.list(params), trainerInstanceTotal: Trainer.count()]
+        //trainerInstanceList = Trainer.list(params)
+        render Trainer.list(params) as JSON
     }
 
-    def create() {
-        [trainerInstance: new Trainer(params)]
-    }
+//    def create() {
+//        [trainerInstance: new Trainer(params)]
+ //   }
 
     def save() {
         def trainerInstance = new Trainer(params)
         if (!trainerInstance.save(flush: true)) {
-            render(view: "create", model: [trainerInstance: trainerInstance])
+            render trainerInstance.errors.allErrors.collect {
+    message(error: it,encodeAs:'HTML')
+} as JSON
             return
         }
 
-        flash.message = message(code: 'default.created.message', args: [message(code: 'trainer.label', default: 'Trainer'), trainerInstance.id])
-        redirect(action: "show", id: trainerInstance.id)
+        render trainerInstance as JSON
     }
 
     def show(Long id) {
         def trainerInstance = Trainer.get(id)
         if (!trainerInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'trainer.label', default: 'Trainer'), id])
-            redirect(action: "list")
-            return
+           response.status = 404
+           render "Trainer not found"
+           return
         }
 
-        [trainerInstance: trainerInstance]
-    }
-
-    def edit(Long id) {
-        def trainerInstance = Trainer.get(id)
-        if (!trainerInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'trainer.label', default: 'Trainer'), id])
-            redirect(action: "list")
-            return
-        }
-
-        [trainerInstance: trainerInstance]
+        render trainerInstance as JSON
     }
 
     def update(Long id, Long version) {
         def trainerInstance = Trainer.get(id)
         if (!trainerInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'trainer.label', default: 'Trainer'), id])
-            redirect(action: "list")
-            return
+           response.status = 404
+           render "Trainer not found"
+           return
         }
 
         if (version != null) {
             if (trainerInstance.version > version) {
-                trainerInstance.errors.rejectValue("version", "default.optimistic.locking.failure",
-                          [message(code: 'trainer.label', default: 'Trainer')] as Object[],
-                          "Another user has updated this Trainer while you were editing")
-                render(view: "edit", model: [trainerInstance: trainerInstance])
+                render message(error: "Another user has updated this Trainer while you were editing", encodeAs: 'HTML') as JSON
                 return
             }
         }
@@ -73,30 +63,31 @@ class TrainerController {
         trainerInstance.properties = params
 
         if (!trainerInstance.save(flush: true)) {
-            render(view: "edit", model: [trainerInstance: trainerInstance])
+           render trainerInstance.errors.allErrors.collect {
+    message(error: it,encodeAs:'HTML')
+} as JSON
             return
         }
 
-        flash.message = message(code: 'default.updated.message', args: [message(code: 'trainer.label', default: 'Trainer'), trainerInstance.id])
-        redirect(action: "show", id: trainerInstance.id)
+        render trainerInstance as JSON
     }
 
     def delete(Long id) {
         def trainerInstance = Trainer.get(id)
         if (!trainerInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'trainer.label', default: 'Trainer'), id])
-            redirect(action: "list")
+           response.status = 404
+           render "Trainer not found"
             return
         }
 
         try {
             trainerInstance.delete(flush: true)
-            flash.message = message(code: 'default.deleted.message', args: [message(code: 'trainer.label', default: 'Trainer'), id])
-            redirect(action: "list")
+            response.status = 200
+            render ''
         }
         catch (DataIntegrityViolationException e) {
-            flash.message = message(code: 'default.not.deleted.message', args: [message(code: 'trainer.label', default: 'Trainer'), id])
-            redirect(action: "show", id: id)
+            response.status = 500
+            render 'Error deleting'
         }
     }
 }

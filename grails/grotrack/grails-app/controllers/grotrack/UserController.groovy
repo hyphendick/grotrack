@@ -1,6 +1,7 @@
 package grotrack
 
 import org.springframework.dao.DataIntegrityViolationException
+import grails.converters.JSON
 
 class UserController {
 
@@ -12,60 +13,49 @@ class UserController {
 
     def list(Integer max) {
         params.max = Math.min(max ?: 10, 100)
-        [userInstanceList: User.list(params), userInstanceTotal: User.count()]
+        //[userInstanceList: User.list(params), userInstanceTotal: User.count()]
+        //userInstanceList = User.list(params)
+        render User.list(params) as JSON
     }
 
-    def create() {
-        [userInstance: new User(params)]
-    }
+//    def create() {
+//        [userInstance: new User(params)]
+ //   }
 
     def save() {
         def userInstance = new User(params)
         if (!userInstance.save(flush: true)) {
-            render(view: "create", model: [userInstance: userInstance])
+            render userInstance.errors.allErrors.collect {
+    message(error: it,encodeAs:'HTML')
+} as JSON
             return
         }
 
-        flash.message = message(code: 'default.created.message', args: [message(code: 'user.label', default: 'User'), userInstance.id])
-        redirect(action: "show", id: userInstance.id)
+        render userInstance as JSON
     }
 
     def show(Long id) {
         def userInstance = User.get(id)
         if (!userInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'user.label', default: 'User'), id])
-            redirect(action: "list")
-            return
+           response.status = 404
+           render "User not found"
+           return
         }
 
-        [userInstance: userInstance]
-    }
-
-    def edit(Long id) {
-        def userInstance = User.get(id)
-        if (!userInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'user.label', default: 'User'), id])
-            redirect(action: "list")
-            return
-        }
-
-        [userInstance: userInstance]
+        render userInstance as JSON
     }
 
     def update(Long id, Long version) {
         def userInstance = User.get(id)
         if (!userInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'user.label', default: 'User'), id])
-            redirect(action: "list")
-            return
+           response.status = 404
+           render "User not found"
+           return
         }
 
         if (version != null) {
             if (userInstance.version > version) {
-                userInstance.errors.rejectValue("version", "default.optimistic.locking.failure",
-                          [message(code: 'user.label', default: 'User')] as Object[],
-                          "Another user has updated this User while you were editing")
-                render(view: "edit", model: [userInstance: userInstance])
+                render message(error: "Another user has updated this User while you were editing", encodeAs: 'HTML') as JSON
                 return
             }
         }
@@ -73,30 +63,31 @@ class UserController {
         userInstance.properties = params
 
         if (!userInstance.save(flush: true)) {
-            render(view: "edit", model: [userInstance: userInstance])
+           render userInstance.errors.allErrors.collect {
+    message(error: it,encodeAs:'HTML')
+} as JSON
             return
         }
 
-        flash.message = message(code: 'default.updated.message', args: [message(code: 'user.label', default: 'User'), userInstance.id])
-        redirect(action: "show", id: userInstance.id)
+        render userInstance as JSON
     }
 
     def delete(Long id) {
         def userInstance = User.get(id)
         if (!userInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'user.label', default: 'User'), id])
-            redirect(action: "list")
+           response.status = 404
+           render "User not found"
             return
         }
 
         try {
             userInstance.delete(flush: true)
-            flash.message = message(code: 'default.deleted.message', args: [message(code: 'user.label', default: 'User'), id])
-            redirect(action: "list")
+            response.status = 200
+            render ''
         }
         catch (DataIntegrityViolationException e) {
-            flash.message = message(code: 'default.not.deleted.message', args: [message(code: 'user.label', default: 'User'), id])
-            redirect(action: "show", id: id)
+            response.status = 500
+            render 'Error deleting'
         }
     }
 }
