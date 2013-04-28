@@ -24,23 +24,23 @@ class CoachController {
     def save() {
         def coachInstance = new Coach(params)
         if (!coachInstance.save(flush: true)) {
-            render(view: "create", model: [coachInstance: coachInstance])
+            render coachInstance.errors.allErrors.collect {
+    message(error: it,encodeAs:'HTML')
+} as JSON
             return
         }
-
-        flash.message = message(code: 'default.created.message', args: [message(code: 'coach.label', default: 'Coach'), coachInstance.id])
-        redirect(action: "show", id: coachInstance.id)
+        render coachInstance as JSON
     }
 
     def show(Long id) {
         def coachInstance = Coach.get(id)
         if (!coachInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'coach.label', default: 'Coach'), id])
-            redirect(action: "list")
+            response.status = 404
+            render "Coach not found"
             return
         }
 
-        [coachInstance: coachInstance]
+        render coachInstance as JSON
     }
 
     def edit(Long id) {
@@ -57,17 +57,14 @@ class CoachController {
     def update(Long id, Long version) {
         def coachInstance = Coach.get(id)
         if (!coachInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'coach.label', default: 'Coach'), id])
-            redirect(action: "list")
+            response.status = 404
+            render "Coach not found"
             return
         }
 
         if (version != null) {
             if (coachInstance.version > version) {
-                coachInstance.errors.rejectValue("version", "default.optimistic.locking.failure",
-                          [message(code: 'coach.label', default: 'Coach')] as Object[],
-                          "Another user has updated this Coach while you were editing")
-                render(view: "edit", model: [coachInstance: coachInstance])
+                render message(error: "Another user has updated this Coach while you were editing", encodeAs: 'HTML') as JSON
                 return
             }
         }
@@ -75,30 +72,31 @@ class CoachController {
         coachInstance.properties = params
 
         if (!coachInstance.save(flush: true)) {
-            render(view: "edit", model: [coachInstance: coachInstance])
+            render coachInstance.errors.allErrors.collect {
+    message(error: it,encodeAs:'HTML')
+} as JSON
             return
         }
 
-        flash.message = message(code: 'default.updated.message', args: [message(code: 'coach.label', default: 'Coach'), coachInstance.id])
-        redirect(action: "show", id: coachInstance.id)
+       render coachInstance as JSON
     }
 
     def delete(Long id) {
         def coachInstance = Coach.get(id)
         if (!coachInstance) {
-            flash.message = message(code: 'default.not.found.message', args: [message(code: 'coach.label', default: 'Coach'), id])
-            redirect(action: "list")
+            response.status = 404
+            render "Coach not found"
             return
         }
 
         try {
             coachInstance.delete(flush: true)
-            flash.message = message(code: 'default.deleted.message', args: [message(code: 'coach.label', default: 'Coach'), id])
-            redirect(action: "list")
+            response.status = 200
+            render ''
         }
         catch (DataIntegrityViolationException e) {
-            flash.message = message(code: 'default.not.deleted.message', args: [message(code: 'coach.label', default: 'Coach'), id])
-            redirect(action: "show", id: id)
+            response.status = 500
+            render 'Error deleting'
         }
     }
 }
