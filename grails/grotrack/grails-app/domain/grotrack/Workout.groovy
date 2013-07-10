@@ -1,7 +1,7 @@
 package grotrack
 
 class Workout {
-
+	static expose = 'Workout'
 	static hasMany = [exercises: Exercise]
 
 	Frequency frequency;
