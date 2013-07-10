@@ -8,5 +8,7 @@ class Athlete extends User {
 	Date dob;
 
     static constraints = {
+
+    	dob (nullable:true)
     }
 }
