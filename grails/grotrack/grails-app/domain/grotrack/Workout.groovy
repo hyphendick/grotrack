@@ -11,5 +11,8 @@ class Workout {
 
 	
     static constraints = {
+    	startDate (nullable:true)
+    	endDate (nullable:true)
+    	frequency (nullable:true)
     }
 }
